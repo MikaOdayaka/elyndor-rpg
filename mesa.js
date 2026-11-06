@@ -12,13 +12,13 @@ const NET=(()=>{
  class Conn extends Em{
   constructor(sig,peer,id,initiator){super();this.sig=sig;this.peer=peer;this.id=id;this.open=false;this.buf={};this.pend=[];
    const pc=this.pc=new RTCPeerConnection({iceServers:CFG.ice});
-   pc.onicecandidate=e=>{if(e.candidate)sig.sendSig({type:"CANDIDATE",dst:peer,payload:{c:e.candidate.toJSON(),id}})};
+   pc.onicecandidate=e=>{if(e.candidate)sig.sendSig({type:"CANDIDATE",dst:peer,payload:{candidate:e.candidate.toJSON(),type:"data",connectionId:id}})};
    pc.onconnectionstatechange=()=>{if(["failed","closed"].includes(pc.connectionState))this.close()};
    if(initiator)this.setup(pc.createDataChannel("elyndor",{ordered:true}));else pc.ondatachannel=e=>this.setup(e.channel);
    this.to=setTimeout(()=>{if(!this.open)this.close()},25000)}
   setup(dc){this.dc=dc;dc.onopen=()=>{this.open=true;clearTimeout(this.to);this.emit("open")};dc.onclose=()=>this.close();dc.onmessage=e=>this.recv(e.data)}
-  async start(){const o=await this.pc.createOffer();await this.pc.setLocalDescription(o);this.sig.sendSig({type:"OFFER",dst:this.peer,payload:{sdp:{type:o.type,sdp:o.sdp},id:this.id}})}
-  async onOffer(p){try{await this.pc.setRemoteDescription(p.sdp);const a=await this.pc.createAnswer();await this.pc.setLocalDescription(a);this.sig.sendSig({type:"ANSWER",dst:this.peer,payload:{sdp:{type:a.type,sdp:a.sdp},id:this.id}});this.flush()}catch(e){this.close()}}
+  async start(){const o=await this.pc.createOffer();await this.pc.setLocalDescription(o);this.sig.sendSig({type:"OFFER",dst:this.peer,payload:{sdp:{type:o.type,sdp:o.sdp},type:"data",connectionId:this.id,label:this.id,reliable:true,serialization:"json",browser:"chrome"}})}
+  async onOffer(p){try{await this.pc.setRemoteDescription(p.sdp);const a=await this.pc.createAnswer();await this.pc.setLocalDescription(a);this.sig.sendSig({type:"ANSWER",dst:this.peer,payload:{sdp:{type:a.type,sdp:a.sdp},type:"data",connectionId:this.id,browser:"chrome"}});this.flush()}catch(e){this.close()}}
   async onAnswer(p){try{await this.pc.setRemoteDescription(p.sdp);this.flush()}catch(e){this.close()}}
   addCand(c){if(this.pc.remoteDescription)this.pc.addIceCandidate(c).catch(()=>{});else this.pend.push(c)}
   flush(){this.pend.forEach(c=>this.pc.addIceCandidate(c).catch(()=>{}));this.pend=[]}
@@ -43,11 +43,11 @@ const NET=(()=>{
    case"ID-TAKEN":this.emit("error",{type:"unavailable-id"});break;
    case"INVALID-KEY":case"ERROR":this.emit("error",{type:"server-error"});break;
    case"EXPIRE":for(const c of [...this.conns.values()])if(c.peer===m.src&&!c.open)c.close();this.emit("error",{type:"peer-unavailable",peer:m.src});break;
-   case"OFFER":{let c=this.conns.get(p.id);if(!c){c=new Conn(this,m.src,p.id,false);this.conns.set(p.id,c);this.emit("connection",c)}c.onOffer(p);break}
-   case"ANSWER":{const c=this.conns.get(p.id);if(c)c.onAnswer(p);break}
-   case"CANDIDATE":{const c=this.conns.get(p.id);if(c)c.addCand(p.c);break}
+   case"OFFER":{const cid=p.connectionId;if(!cid||!p.sdp)break;let c=this.conns.get(cid);if(!c){c=new Conn(this,m.src,cid,false);this.conns.set(cid,c);this.emit("connection",c)}c.onOffer(p);break}
+   case"ANSWER":{const c=this.conns.get(p.connectionId);if(c)c.onAnswer(p);break}
+   case"CANDIDATE":{const c=this.conns.get(p.connectionId);if(c&&p.candidate)c.addCand(p.candidate);break}
    case"LEAVE":for(const c of [...this.conns.values()])if(c.peer===m.src)c.close();break}}
-  connect(dst){const id="c"+Math.random().toString(36).slice(2);const c=new Conn(this,dst,id,true);this.conns.set(id,c);c.start().catch(()=>c.close());return c}
+  connect(dst){const id="dc_"+Math.random().toString(36).slice(2,12);const c=new Conn(this,dst,id,true);this.conns.set(id,c);c.start().catch(()=>c.close());return c}
   destroy(){this.destroyed=true;for(const c of [...this.conns.values()])c.close();clearInterval(this.hb);try{this.sendSig({type:"LEAVE"});this.ws&&this.ws.close()}catch(e){}}
   get disconnected(){return!this.ws||this.ws.readyState!==1}}
  return{Sig}})();

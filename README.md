@@ -1,20 +1,32 @@
-# Elyndor RPG — Ficha e Grimório
+# Elyndor RPG: ficha, grimório e mesa ao vivo
 
-Site da ficha de personagem com grimório de poderes, protegido por senha.
+Site aberto: **https://mikaodayaka.github.io/elyndor-rpg/**
 
-**Jogadores**
-1. Abram o link de convite que o mestre mandou.
-2. Cliquem em **+ Nova ficha** e escolham uma senha. A ficha fica criptografada no navegador.
-3. A ficha tem as abas Frente, Evolução, **Grimório** e Personagem. No Grimório ficam os cards de poder, com os botões Usar, Ligar/Desligar e Descanso longo.
-4. Na aba **Enviar ao mestre**, gerem o código e mandem só para o mestre. Mandem de novo sempre que quiserem atualizar.
-5. Para levar a ficha a outro aparelho, usem **Baixar backup** e depois **Importar backup**, com a mesma senha.
+Qualquer pessoa pode criar um personagem, sem convite e sem conta.
 
-**Mestre**
-1. Em **Mesa do mestre**, crie uma senha. Isso gera a chave da mesa.
-2. Mande o link de convite aos jogadores.
-3. Receba os códigos deles. Os cards mostram PV, VB, Fé, Evasiva e condições; **Ver ficha** mostra tudo, inclusive o grimório, sem edição.
-4. Faça **Backup da mesa** de vez em quando.
+## Jogadores
+1. Abram o site e cliquem em **+ Criar personagem**. A senha tranca a ficha no navegador; ela não pode ser recuperada.
+2. A ficha calcula as coisas sozinha:
+   - os totais, contando bônus de armadura e de itens;
+   - as penalidades das condições (com nível) e das Marcas do Limiar;
+   - o desgaste da armadura;
+   - os descansos (5%, 15%, 40% e 100%).
+3. Para rolar, cliquem no nome de uma perícia ou de um atributo, ou no 🎲 de um ataque. Usar um poder toca um som e mostra um efeito; cada um pode subir o próprio som.
+4. Para jogar, cliquem em **🎲 Entrar na mesa** e digitem o código que o mestre passar, ou abram o link que ele mandar.
 
-**Segurança.** A ficha salva usa AES-256 com a senha do jogador, e o código enviado ao mestre usa ECDH P-256. Ninguém lê a ficha de outra pessoa, e nada vai para servidor nenhum. Não existe recuperação de senha: se alguém esquecer, o mestre pode **Exportar** a última versão que recebeu.
+## Mestre
+1. Cliquem em **Mestre** e depois em **Abrir mesa ao vivo**. O código da mesa é sempre o mesmo.
+2. Use **Convidar** para copiar o link e mande no grupo.
+3. A mesa tem:
+   - mapa (imagem), grade, tokens, régua, ping, lápis, névoa e iniciativa;
+   - chat com rolagens (`/r 2d6+3`, ou `/rs` para rolagem secreta);
+   - as fichas dos jogadores atualizando ao vivo.
+4. Quando alguém usa um poder, aparece um balão em cima do token e uma mensagem no chat.
+5. Deixe a mesa aberta enquanto jogam. A cena fica salva no navegador do mestre.
 
-Fontes: EB Garamond e Lora (Google Fonts, SIL OFL).
+## Como funciona
+- Os navegadores se conectam direto (WebRTC criptografado). O servidor gratuito do PeerJS só apresenta um navegador ao outro.
+- Alguns jogadores podem não conseguir conectar, em certas redes de celular ou de empresa. Nesse caso, o jogador pode mandar a ficha por código, em **Mestre → Fichas por código**.
+
+## Arquivos
+`index.html`, `core.js`, `ficha.js`, `mesa.js` e este `README.md`. Para atualizar o site, suba os arquivos novos por cima.
